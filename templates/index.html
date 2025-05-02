@@ -1,21 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Uploaded Images</title>
+  <meta charset="UTF-8">
+  <title>Uploaded Images - Modern Gallery</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Fixed footer style for row count */
+    .row-count {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+    }
+    .img-thumb {
+      width: 75px; /* a little smaller than before */
+      margin-right: 5px;
+    }
+    /* Handle long filenames: show a trimmed version with tooltip */
+    .filename-trim {
+      max-width: 150px;
+      display: inline-block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
-    <h2>Uploaded Images</h2>
-    <table border="1" cellpadding="5">
-        <tr><th>ID</th><th>Filename</th><th>Preview</th></tr>
-        {% for row in rows %}
-        <tr>
-            <td>{{ row[0] }}</td>
-            <td>{{ row[1] }}</td>
-            <td><img src="{{ url_for('get_image', image_id=row[0]) }}" width="100"></td>
-        </tr>
-        {% endfor %}
-    </table>
-    <br>
-    <a href="{{ url_for('upload') }}">Upload Another Image</a>
+  <!-- Navigation bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">Image Gallery</a>
+    </div>
+  </nav>
+
+  <!-- Main container -->
+  <div class="container mt-5">
+    <h2 class="mb-4">Uploaded Images</h2>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Filenames</th>
+            <th scope="col">Upload Time</th>
+            <th scope="col">Preview</th>
+            {% if allow_delete %}
+              <th scope="col">Actions</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row.id }}</td>
+            <td>
+              <span class="filename-trim" title="{{ row.filenames }}">
+                {{ row.filenames }}
+              </span>
+            </td>
+            <td>{{ row.upload_time | datetimeformat }}</td>
+            <td>
+              {% for image in row.images %}
+                <!-- Generate URL for each image using the batch's id and the index -->
+                <img src="{{ url_for('get_image', upload_id=row.id, index=loop.index0) }}" alt="Image" class="img-thumb img-thumbnail">
+              {% endfor %}
+            </td>
+            {% if allow_delete %}
+            <td>
+              <form action="{{ url_for('delete_image', image_id=row.id) }}" method="POST"
+                    onsubmit="return confirm('Are you sure you want to delete this upload?');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <a href="{{ url_for('upload') }}" class="btn btn-primary mt-3">Upload More Images</a>
+  </div>
+
+  <!-- Fixed row count display -->
+  <div class="row-count">
+      Showing {{ rows|length }} row{{ rows|length != 1 and 's' or '' }}
+  </div>
+
+  <!-- Bootstrap JS Bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
