@@ -3,6 +3,8 @@ import sqlite3
 import json
 import base64
 import datetime
+import time
+import threading
 from io import BytesIO
 from flask import Flask, request, redirect, url_for, render_template, send_file, abort, session
 from werkzeug.utils import secure_filename
@@ -26,6 +28,18 @@ def init_db():
         ''')
 init_db()
 
+def migrate_db():
+    with sqlite3.connect("uploads.db") as conn:
+        cursor = conn.cursor()
+        # Check the current columns in the table
+        columns = [col[1] for col in cursor.execute("PRAGMA table_info(uploads)")]
+        if "analysis_status" not in columns:
+            cursor.execute("ALTER TABLE uploads ADD COLUMN analysis_status TEXT")
+        if "analysis_data" not in columns:
+            cursor.execute("ALTER TABLE uploads ADD COLUMN analysis_data TEXT")
+        conn.commit()
+migrate_db()
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -41,6 +55,43 @@ def datetimeformat(value):
 @app.errorhandler(413)
 def too_large(e):
     return "Uploaded file is too large. Maximum allowed size is 16 MB total.", 413
+
+def do_analysis(upload_id):
+    """
+    This background function simulates analysis.
+    It waits (to mimic a time-consuming process) and then updates the record for the given upload.
+    """
+    # Simulate a delay for processing (e.g., 5 seconds)
+    time.sleep(5)
+    
+    # Dummy analysis – replace with actual image analysis if desired.
+    analysis_paragraphs = [
+       "Analysis Result: Your uploaded images show promising characteristics based on our preliminary automated checks.",
+       "Detailed computational analysis confirms that the images meet the necessary criteria for optimal display.",
+       "Final Evaluation: Processed successfully; the results are now available for further review."
+    ]
+    analysis_table = {
+       "headers": ["Metric", "Value", "Range", "Unit", "Status"],
+       "rows": [
+         ["Image Quality", "85", "0-100", "Score", "Good"],
+         ["Resolution", "1080p", "720p-4K", "", "Optimal"],
+         ["Color Balance", "Balanced", "Unbalanced", "", "Normal"]
+       ]
+    }
+    analysis_report = {
+      "paragraphs": analysis_paragraphs,
+      "table": analysis_table
+    }
+    
+    analysis_report_json = json.dumps(analysis_report)
+    
+    # Update the record to indicate that analysis is complete.
+    with sqlite3.connect("uploads.db") as conn:
+        conn.execute(
+            "UPDATE uploads SET analysis_status = ?, analysis_data = ? WHERE id = ?",
+            ("complete", analysis_report_json, upload_id)
+        )
+        conn.commit()
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
@@ -70,67 +121,67 @@ def upload():
         joined_filenames = ', '.join(filenames)
         datas_json = json.dumps(image_list)
 
+        # Insert record with analysis_status set to "pending"
         with sqlite3.connect("uploads.db") as conn:
             cur = conn.cursor()
-            cur.execute("INSERT INTO uploads (filenames, datas, upload_time) VALUES (?, ?, ?)",
-                        (joined_filenames, datas_json, upload_time))
+            cur.execute(
+                "INSERT INTO uploads (filenames, datas, upload_time, analysis_status, analysis_data) VALUES (?, ?, ?, ?, ?)",
+                (joined_filenames, datas_json, upload_time, "pending", "")
+            )
             last_id = cur.lastrowid
             conn.commit()
 
-        # Store the last inserted upload id in session, so /uploaded can reference it.
         session['last_upload_id'] = last_id
 
-        # Redirect to /uploaded after upload
+        # Start background analysis
+        threading.Thread(target=do_analysis, args=(last_id,), daemon=True).start()
+
+        # Immediately redirect to /uploaded
         return redirect(url_for('uploaded'))
 
     return render_template('frontend.html')
-
-# ... [Other parts of server.py remain unchanged] ...
 
 @app.route('/uploaded')
 def uploaded():
     last_id = session.get('last_upload_id')
     if last_id is None:
         return "Access Denied", 403
+
     with sqlite3.connect("uploads.db") as conn:
-        row = conn.execute("SELECT id, filenames, datas, upload_time FROM uploads WHERE id=?", (last_id,)).fetchone()
+        row = conn.execute(
+            "SELECT id, filenames, datas, upload_time, analysis_status, analysis_data FROM uploads WHERE id = ?",
+            (last_id,)
+        ).fetchone()
+        
     if not row:
         return "Upload not found", 404
 
-    id_, filenames, datas, upload_time = row
+    id_, filenames, datas, upload_time, analysis_status, analysis_data = row
     try:
         images = json.loads(datas)
     except Exception:
         images = []
 
-    # Generate dummy analysis report from backend.
-    analysis_paragraphs = [
-       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec vitae tellus vehicula, fermentum nibh at, auctor ipsum. Sed faucibus, urna id mollis convallis, nisi urna aliquet neque, et consectetur quam risus at justo.",
-       "Vivamus non odio sed lacus interdum pellentesque. Phasellus eget elementum quam. Curabitur eu magna nec neque blandit consequat. Quisque elementum hendrerit facilisis.",
-       "Sed efficitur tempor magna, eu porta nisl interdum in. In hac habitasse platea dictumst. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas."
-    ]
-    analysis_table = {
-       "headers": ["Metric", "Value", "Range", "Unit", "Status"],
-       "rows": [
-         ["Speed", "120", "80-140", "km/h", "Normal"],
-         ["Engine Temp", "95", "90-110", "°C", "High"],
-         ["Battery Voltage", "12.4", "12-14", "V", "Optimal"],
-         ["Fuel Efficiency", "15", "10-20", "km/l", "Normal"],
-         ["Tire Pressure", "32", "30-35", "PSI", "Optimal"]
-       ]
-    }
-    analysis_report = {
-      "paragraphs": analysis_paragraphs,
-      "table": analysis_table
-    }
-    
-    return render_template('uploaded.html', 
-                           upload={"id": id_, "filenames": filenames, "upload_time": upload_time, "images": images},
-                           analysis_report=analysis_report)
+    # Check if analysis is complete.
+    if analysis_status != "complete":
+        analysis_report = {
+            "pending": True,
+            "message": "Analysis is still in progress. Please wait—the page will refresh automatically when complete."
+        }
+    else:
+        try:
+            analysis_report = json.loads(analysis_data)
+        except Exception:
+            analysis_report = {}
+
+    return render_template(
+        'uploaded.html',
+        upload={"id": id_, "filenames": filenames, "upload_time": upload_time, "images": images},
+        analysis_report=analysis_report
+    )
 
 @app.route('/')
 def index():
-    # Pagination, sorting parameters (as before)
     page = request.args.get('page', default=1, type=int)
     per_page = request.args.get('per_page', default=25, type=int)
     sort_by = request.args.get('sort_by', default='upload_time')
@@ -201,5 +252,4 @@ def delete_image(image_id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # alter_table("uploads.db", ["ALTER TABLE uploads ADD COLUMN filenames TEXT", "ALTER TABLE uploads ADD COLUMN datas TEXT", "ALTER TABLE uploads ADD COLUMN upload_time INTEGER"])
     app.run(host="0.0.0.0", port=5000, debug=True)
