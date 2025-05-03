@@ -11,7 +11,7 @@
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    /* Ensure carousel images adjust dynamically */
+    /* Carousel Image Styling */
     .carousel-item img {
       width: 100%;
       max-height: 500px;
@@ -20,6 +20,42 @@
     .osint-intro {
       margin-bottom: 20px;
     }
+    /* Loader Animation */
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #006064;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1.5s linear infinite;
+      margin: 0 auto 1rem auto;
+    }
+    @keyframes spin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* Modern pending analysis message */
+    .pending-analysis {
+      border-radius: 0.5rem;
+      background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+      border: none;
+      color: #006064;
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
+    .pending-analysis p {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    {% if analysis_report.pending %}
+    /* Auto-refresh while pending */
+    </style>
+    <meta http-equiv="refresh" content="5">
+    <style>
+    {% endif %}
   </style>
 </head>
 <body>
@@ -57,32 +93,40 @@
     </div>
     {% endif %}
     
-    <!-- Analysis Report Section (populated from backend) -->
+    <!-- Analysis Report Section -->
     <div id="analysisReport" class="mt-4">
-      <h4>Analysis Report</h4>
-      {% for para in analysis_report.paragraphs %}
-         <p>{{ para }}</p>
-      {% endfor %}
-      <div class="table-responsive">
-         <table class="table analysis-table">
-           <thead>
-             <tr>
-               {% for header in analysis_report.table.headers %}
-                 <th>{{ header }}</th>
-               {% endfor %}
-             </tr>
-           </thead>
-           <tbody>
-             {% for row in analysis_report.table.rows %}
+      {% if analysis_report.pending %}
+        <div class="pending-analysis">
+          <div class="loader"></div>
+          <p>Your submission is currently undergoing automated analysis.</p>
+          <p>Please allow a moment while we compile your detailed report.</p>
+        </div>
+      {% else %}
+        <h4>Analysis Report</h4>
+        {% for para in analysis_report.paragraphs %}
+           <p>{{ para }}</p>
+        {% endfor %}
+        <div class="table-responsive">
+           <table class="table analysis-table">
+             <thead>
                <tr>
-                 {% for cell in row %}
-                   <td>{{ cell }}</td>
+                 {% for header in analysis_report.table.headers %}
+                   <th>{{ header }}</th>
                  {% endfor %}
                </tr>
-             {% endfor %}
-           </tbody>
-         </table>
-      </div>
+             </thead>
+             <tbody>
+               {% for row in analysis_report.table.rows %}
+                 <tr>
+                   {% for cell in row %}
+                     <td>{{ cell }}</td>
+                   {% endfor %}
+                 </tr>
+               {% endfor %}
+             </tbody>
+           </table>
+        </div>
+      {% endif %}
     </div>
     
   </div>
