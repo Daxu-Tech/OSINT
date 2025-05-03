@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Uploaded Images - Modern Gallery</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">Image Gallery</a>
+    </div>
+  </nav>
+  <div class="container mt-5">
+    <h2 class="mb-4">Uploaded Images</h2>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">
+              <a href="{{ url_for('index', sort_by='filenames', order='asc' if sort_by != 'filenames' or order=='desc' else 'desc', page=1, per_page=per_page) }}" style="color: inherit; text-decoration: none;">
+                Filenames
+                {% if sort_by == 'filenames' %}
+                  {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+              </a>
+            </th>
+            <th scope="col">
+              <a href="{{ url_for('index', sort_by='upload_time', order='asc' if sort_by != 'upload_time' or order=='desc' else 'desc', page=1, per_page=per_page) }}" style="color: inherit; text-decoration: none;">
+                Upload Time
+                {% if sort_by == 'upload_time' %}
+                  {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+              </a>
+            </th>
+            <th scope="col">Preview</th>
+            {% if allow_delete %}
+            <th scope="col">Actions</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row.id }}</td>
+            <td>
+              <span class="filename-trim" title="{{ row.filenames }}">
+                {{ row.filenames }}
+              </span>
+            </td>
+            <td>{{ row.upload_time | datetimeformat }}</td>
+            <td>
+              {% for image in row.images %}
+                <img src="{{ url_for('get_image', upload_id=row.id, index=loop.index0) }}" alt="Image" class="img-thumb img-thumbnail">
+              {% endfor %}
+            </td>
+            {% if allow_delete %}
+            <td>
+              <form action="{{ url_for('delete_image', image_id=row.id) }}" method="POST"
+                    onsubmit="return confirm('Are you sure you want to delete this upload?');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <a href="{{ url_for('upload') }}" class="btn btn-primary mt-3">Upload More Images</a>
+  </div>
+
+  <!-- Fixed bottom-right pagination panel -->
+  <div class="pagination-panel">
+      <form method="GET" id="perPageForm">
+          <label for="per_page">Entries per page:</label>
+          <select name="per_page" id="per_page" onchange="document.getElementById('perPageForm').submit();">
+              <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+              <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+              <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+          </select>
+          <input type="hidden" name="page" value="1">
+          <input type="hidden" name="sort_by" value="{{ sort_by }}">
+          <input type="hidden" name="order" value="{{ order }}">
+      </form>
+      <div style="margin-top: 10px;">
+          Showing {{ rows|length }} from {{ total_count }}
+      </div>
+      <div style="margin-top: 10px;">
+          {% if page > 1 %}
+              <a href="{{ url_for('index', page=page-1, per_page=per_page, sort_by=sort_by, order=order) }}" class="btn btn-sm btn-light">Previous</a>
+          {% endif %}
+          {% if page < total_pages %}
+              <a href="{{ url_for('index', page=page+1, per_page=per_page, sort_by=sort_by, order=order) }}" class="btn btn-sm btn-light">Next</a>
+          {% endif %}
+      </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

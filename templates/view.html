@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vehicle OSINT - View Uploads</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      background: url('/static/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      backdrop-filter: blur(3px);
+      padding: 20px;
+    }
+    .container {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #343a40;
+      color: white;
+    }
+    .image-thumb {
+      max-height: 100px;
+      max-width: 150px;
+    }
+    .filename {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .datetime {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .pagination {
+      margin-top: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Uploaded Vehicle Images</h2>
+    {% for group in grouped %}
+      <table>
+        <tr>
+          <th>Preview</th>
+          <th>Filename</th>
+          <th>Date/Time</th>
+          {% if whitelist %}<th>Delete</th>{% endif %}
+        </tr>
+        <tr>
+          {% for image in group[:5] %}
+            <td><img class="image-thumb" src="{{ url_for('uploaded_file', filename=image['filepath'].split('static/uploads/')[-1]) }}" alt="Image"></td>
+            <td><div class="filename" title="{{ image['filename'] }}">{{ image['filename'] }}</div></td>
+            <td class="datetime">{{ image['timestamp'] | datetimeformat }}</td>
+            {% if whitelist %}
+              <td>
+                <form method="POST" action="{{ url_for('delete', id=image['id']) }}">
+                  <button type="submit">Delete</button>
+                </form>
+              </td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      </table>
+    {% endfor %}
+  </div>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Analysis Report</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* Ensure carousel images adjust dynamically */
+    .carousel-item img {
+      width: 100%;
+      max-height: 500px;
+      object-fit: contain;
+    }
+    .osint-intro {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">Image Analysis</a>
+    </div>
+  </nav>
+
+  <div class="container mt-3">
+    <!-- Static Introduction About OSINT -->
+    <div class="osint-intro">
+      <h2>About OSINT &amp; Vehicle OSINT</h2>
+      <p>Open Source Intelligence (OSINT) refers to the practice of collecting and analyzing publicly available information. It is an invaluable tool in cybersecurity, law enforcement, and strategic investigations.</p>
+      <p>Vehicle OSINT focuses on gathering data about vehicles – such as history, registration details, and modifications – to support investigations into theft, fraud, or accidents.</p>
+    </div>
+    <h3>Upload Received</h3>
+    <p>Thank you for your upload. Please review the images and analysis report below.</p>
+    
+    {% if upload.images|length > 0 %}
+    <div class="carousel-container" id="carouselContainer">
+      <!-- Carousel -->
+      <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+         <div class="carousel-inner">
+            {% for image in upload.images %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+               <img src="{{ url_for('get_image', upload_id=upload.id, index=loop.index0) }}" class="d-block w-100" alt="Uploaded Image">
+            </div>
+            {% endfor %}
+         </div>
+         <!-- Custom translucent controls over the image -->
+         <button id="carouselPrev" class="custom-carousel-btn left">&lt;</button>
+         <button id="carouselNext" class="custom-carousel-btn right">&gt;</button>
+      </div>
+    </div>
+    {% endif %}
+    
+    <!-- Analysis Report Section (populated from backend) -->
+    <div id="analysisReport" class="mt-4">
+      <h4>Analysis Report</h4>
+      {% for para in analysis_report.paragraphs %}
+         <p>{{ para }}</p>
+      {% endfor %}
+      <div class="table-responsive">
+         <table class="table analysis-table">
+           <thead>
+             <tr>
+               {% for header in analysis_report.table.headers %}
+                 <th>{{ header }}</th>
+               {% endfor %}
+             </tr>
+           </thead>
+           <tbody>
+             {% for row in analysis_report.table.rows %}
+               <tr>
+                 {% for cell in row %}
+                   <td>{{ cell }}</td>
+                 {% endfor %}
+               </tr>
+             {% endfor %}
+           </tbody>
+         </table>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Bootstrap JS Bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Define an array of dynamic background colors.
+    const dynamicColors = ["#222", "#333", "#444", "#555", "#666", "#777", "#888"];
+    
+    // Initialize the carousel with a 5000ms (5s) interval.
+    var carouselElement = document.querySelector('#carouselExampleControls');
+    var carousel = new bootstrap.Carousel(carouselElement, {
+       interval: 5000,
+       ride: 'carousel'
+    });
+    
+    // Function to update the carousel container's background dynamically.
+    function updateCarouselBackground() {
+      var activeItem = carouselElement.querySelector('.carousel-item.active');
+      var items = Array.from(carouselElement.querySelectorAll('.carousel-item'));
+      var activeIndex = items.indexOf(activeItem);
+      var newColor = dynamicColors[activeIndex % dynamicColors.length];
+      document.getElementById('carouselContainer').style.backgroundColor = newColor;
+    }
+    
+    // Update background on slide event.
+    carouselElement.addEventListener('slid.bs.carousel', function () {
+      updateCarouselBackground();
+    });
+    updateCarouselBackground();
+    
+    // Custom control button events.
+    document.getElementById('carouselPrev').addEventListener('click', function() {
+        carousel.prev();
+        carousel.pause();
+        carousel.cycle();
+    });
+    document.getElementById('carouselNext').addEventListener('click', function() {
+        carousel.next();
+        carousel.pause();
+        carousel.cycle();
+    });
+  </script>
+</body>
+</html>
