@@ -1,0 +1,139 @@
+/* Thumbnail images: used on index page previews only */
+.img-thumb {
+    width: 50px;
+    margin-right: 5px;
+}
+
+/* Trim overly long filenames */
+.filename-trim {
+    max-width: 150px;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+/* Fixed bottom-right panel for pagination controls (index page) */
+.pagination-panel {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    text-align: center;
+    z-index: 1000;
+}
+
+.pagination-panel a.btn {
+    margin: 0 2px;
+}
+
+.carousel-container {
+    background-color: #222;  /* initial color */
+    padding: 10px 5px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    transition: background-color 1s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.carousel-container:hover {
+    transform: scale(1.01);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+/* Custom translucent carousel navigation buttons */
+.custom-carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    color: white;
+    font-size: 30px;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 50%;
+    outline: none;
+    transition: background 0.3s, transform 0.3s;
+}
+.custom-carousel-btn:hover {
+    background: rgba(0, 0, 0, 0.5);
+    transform: translateY(-50%) scale(1.1);
+}
+.custom-carousel-btn.left {
+    left: 10px;
+}
+.custom-carousel-btn.right {
+    right: 10px;
+}
+
+.carousel-item img {
+    display: block;
+    margin: 0 auto;
+    /* Ensure the image never exceeds the container's width */
+    max-width: 100%;
+    /* Limit the image height to 500px for large images */
+    max-height: 500px;
+    /* Allow the browser to adjust width/height naturally */
+    width: auto;
+    height: auto;
+    /* object-fit: contain ensures the image scales down appropriately while preserving aspect ratio */
+    object-fit: contain;
+}
+
+/* Analysis report table styling */
+.analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.analysis-table th, .analysis-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+.analysis-table th {
+    background-color: #343a40;
+    color: white;
+}
+
+/* ---------- Appended New Rules for Loader and Pending Analysis ---------- */
+
+/* Loader Animation for pending analysis */
+.loader {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #006064;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1.5s linear infinite;
+    margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Modern Pending Analysis Message Styling */
+.pending-analysis {
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+    border: none;
+    color: #006064;
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.pending-analysis p {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
